@@ -1,1 +1,1 @@
-# dont-starve-togather-tools
+# dont-starve-together-tools
