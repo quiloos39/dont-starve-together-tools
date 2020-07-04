@@ -1,3 +1,7 @@
+local FILEPATH = "dedicated_server_mods_setup.lua"
+local FILECONTENT = ""
+local availableCommands
+
 local function CheckFileExist(filename)
     local file = io.open(filename, "r")
     if (file == nil) then
@@ -10,17 +14,15 @@ local function CheckFileExist(filename)
 end
 
 local function checkForExistingMod(CONTENT, modid)
-    
     return CONTENT:match(modid) == modid
 end
 
-
-local availableCommands
 
 availableCommands = {
     ["install"] = {
         desc = "Installs mod for given mod-id.",
         f = function(FILEPATH, arg)
+            CheckFileExist(FILEPATH)
             local file = io.open(FILEPATH, "r+")
             local FILECONTENT = file:read("*all")
             for index=2,#arg do
@@ -38,17 +40,20 @@ availableCommands = {
     ["remove"] = {
         desc = "Removes a mod for given mod-id.",
         f = function(FILEPATH, arg)
+            local file = io.open(FILEPATH, "r+")
             local FILECONTENT = file:read("*all")
+            file:close()
             for index=2,#arg do
                 local modid = arg[index]
                 if checkForExistingMod(FILECONTENT, modid) then
                    FILECONTENT = string.gsub(FILECONTENT, "ServerModSetup%(\""..modid.."\"%)\n", "")
-                   print(FILECONTENT)
                 else
                     print(string.format("Mod %s doesn't exist", modid))
                 end
-                file:seek("set", 0)
             end
+            file = io.open(FILEPATH, "w")
+            file:write(FILECONTENT)
+            file:close()
         end
     },
     ["help"] = {
@@ -63,20 +68,14 @@ availableCommands = {
 }
 
 local function HandleArguments(FILEPATH, arg)
-    if #arg == 0 then
-        availableCommands["help"].f()
-    else
-        local command = arg[1]
-        for commandName, commandObject in pairs(availableCommands) do
-            if commandName == command then
-                commandObject.f(FILEPATH, arg)
-            end
+    local command = arg[1]
+    for commandName, commandObject in pairs(availableCommands) do
+        if commandName == command then
+            commandObject.f(FILEPATH, arg)
+            return
         end
     end
+    availableCommands["help"].f()
 end
 
-local FILEPATH = "dedicated_server_mods_setup.lua"
-CheckFileExist(FILEPATH)
-local file = io.open(FILEPATH, "r+")
 HandleArguments(FILEPATH, arg)
-file:close()
